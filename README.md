@@ -7,9 +7,10 @@ Personal site of Emberson Pieretti. Static files only, no build step.
 - `/projects/` (`projects/index.html`): the card-fan carousel, one card per project.
 
 ## Hosting
-- Netlify project `emberpieretti-projetos` (site id `3b65df2c-116c-480e-b990-06136fcfb53b`), custom domain emberpieretti.com (www redirects).
-- DNS at GoDaddy: A `@` → `75.2.60.5`, CNAME `www` → `emberpieretti-projetos.netlify.app`. No changes needed.
-- Goal: connect this folder's GitHub repo to that existing Netlify project so every push goes live. Do not create a new Netlify project.
+- GitHub Pages, from the `main` branch, root folder. Every push to `main` goes live in about a minute.
+- Custom domain emberpieretti.com (file `CNAME`); `.nojekyll` makes Pages serve the files as they are.
+- DNS at GoDaddy: A `@` → 185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153; CNAME `www` → `emberpierettiai.github.io`.
+- The old Netlify project `emberpieretti-projetos` is no longer used. `netlify.toml` is left in place and has no effect on Pages.
 
 ## Structure
 ```
