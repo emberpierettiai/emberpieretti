@@ -11,14 +11,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap" rel="stylesheet">
 <style>
 /*
-  LAYOUT: one full-screen stage. The bunny video plays once, walks in and points;
-  the 3D button appears exactly where he points and links to /projects/.
+  LAYOUT: one full-screen stage. The bunny video plays once, walks in and points.
+  A miniature of the projects card fan opens where he points and links to the projects page.
+  After the video ends, the head is swapped for a cut-out layer that turns toward the cursor.
 */
 :root {
   --red-top: #e2183d;     /* sampled from the video's upper edge */
   --red-bottom: #f04a6c;  /* sampled from the lit floor */
-  --ink: #0b0b0c;         /* button body, matches the bunny's shirt */
-  --paper: #fff7f4;       /* button label and header text */
+  --paper: #fff7f4;       /* header and label text */
+  --ink: #120a0c;
   --focus: #ffe08a;
   --f-display: 'Bricolage Grotesque', 'Avenir Next', 'Segoe UI', sans-serif;
   color-scheme: dark;
@@ -33,11 +34,23 @@ body {
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 .stage { position: fixed; inset: 0; overflow: hidden; }
-#bunny { position: absolute; display: block; max-width: none; pointer-events: none; }
-/* in the narrow layout the video does not reach the screen edges: fade its top and bottom into the page colour */
+.layer { position: absolute; display: block; max-width: none; pointer-events: none; }
 .stage.narrow #bunny {
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 9%, #000 88%, transparent 100%);
           mask-image: linear-gradient(180deg, transparent 0, #000 9%, #000 88%, transparent 100%);
+}
+
+/* head cut-out: hidden until the video has ended on the pointing pose */
+.head-rig { position: absolute; pointer-events: none; visibility: hidden; }
+.head-rig.on { visibility: visible; }
+.head-rig img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; max-width: none; }
+.head { position: absolute; inset: 0; transform-origin: 50% 97%; will-change: transform; }
+/* a soft reflection that slides across each lens */
+.lens { position: absolute; overflow: hidden; border-radius: 42% 42% 48% 48% / 50% 50% 55% 55%; mix-blend-mode: screen; }
+.lens i {
+  position: absolute; top: -30%; bottom: -30%; width: 34%; left: 33%;
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.55) 50%, rgba(255,255,255,0));
+  transform: skewX(-18deg); opacity: .5; will-change: transform;
 }
 
 .bar {
@@ -50,46 +63,87 @@ body {
 .bar .to-projects { opacity: .85; }
 .bar .to-projects:hover { opacity: 1; }
 
-/* ---------- the 3D button ---------- */
-.cta {
-  position: absolute; z-index: 4; left: 0; top: 0;
-  display: inline-flex; align-items: center; justify-content: center; gap: .6em;
-  padding: .95em 1.55em 1em; border-radius: 999px;
-  font: 700 clamp(15px, .55rem + .85vw, 26px)/1.12 var(--f-display); letter-spacing: -0.015em; text-align: center;
-  color: var(--paper); text-decoration: none;
+/* ---------- the miniature card fan ---------- */
+.fan {
+  position: absolute; z-index: 4; left: 0; top: 0; display: block;
+  color: var(--paper); text-decoration: none; -webkit-tap-highlight-color: transparent; outline: none;
+}
+.fan-cards { position: relative; }
+.mini {
+  position: absolute; left: 50%; top: 0; width: var(--cw); height: var(--ch); margin-left: calc(var(--cw) / -2);
+  border-radius: calc(var(--cw) * .16); overflow: hidden; background: #1a1012;
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 10px 22px -8px rgba(70,0,14,.7), 0 2px 6px rgba(0,0,0,.25);
+  transform-origin: 50% 120%;
+  transform: translate(calc(var(--cw) * 1.6), 10px) rotate(14deg) scale(.4); opacity: 0;
+  transition: transform 650ms cubic-bezier(.2,1.25,.4,1), opacity 250ms ease-out, box-shadow 200ms ease-out;
+}
+.mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fan.show .mini { opacity: 1; transform: var(--rest); }
+.fan.show:hover .mini, .fan.show:focus-visible .mini { transform: var(--open); transition-duration: 450ms, 250ms, 200ms; transition-delay: 0ms !important; }
+.fan.show:hover .mini.c, .fan.show:focus-visible .mini.c { box-shadow: 0 18px 30px -10px rgba(70,0,14,.8), 0 0 0 2px rgba(255,255,255,.65); }
+
+/* ---------- main call to action ---------- */
+.fan-label {
+  --mx: 0px; --my: 0px;
+  position: absolute; z-index: 20; left: 0; top: calc(var(--ch) * var(--lt, 1.24));
+  transform: translate(calc(-50% + var(--mx)), calc(10px + var(--my)));
+  display: inline-flex; align-items: center; white-space: nowrap; color: #fff;
+  opacity: 0; transition: opacity 300ms ease-out 450ms, transform 350ms cubic-bezier(.16,1,.3,1);
+}
+.fan.show .fan-label { opacity: 1; transform: translate(calc(-50% + var(--mx)), var(--my)); }
+.fan:focus-visible .fan-label { outline: 2px solid var(--focus); outline-offset: 6px; border-radius: 999px; }
+
+/* look B: editorial, big type and a round arrow */
+.v-edit .fan-label { gap: .9em; font-weight: 700; font-size: calc(var(--lf) * 1.55); letter-spacing: -0.03em; line-height: 1; text-shadow: 0 2px 12px rgba(90,0,20,.35); }
+.v-edit .fan-label .txt { text-align: left; }
+.v-edit .fan-label .txt em { font-style: normal; display: block; font-size: .52em; font-weight: 500; letter-spacing: 0; opacity: .85; margin-bottom: .45em; }
+.v-edit .fan-label .go {
+  position: relative; flex: none; width: 2.2em; height: 2.2em; border-radius: 50%; display: grid; place-items: center; overflow: hidden;
+  background: #111; color: #fff; box-shadow: 0 10px 24px -8px rgba(40,0,10,.8);
+  transition: transform 350ms cubic-bezier(.16,1,.3,1), background-color 200ms;
+}
+.v-edit .fan-label .go svg { width: 40%; height: 40%; }
+.v-edit.show:hover .fan-label .go { transform: scale(1.12); background: #fff; color: #e2183d; }
+
+/* ---------- fingertip button: glossy navy pill ---------- */
+.tap {
+  --mx: 0px; --my: 0px;
+  position: absolute; z-index: 6; left: 0; top: 0; isolation: isolate;
+  display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
+  font: 700 var(--tf, 12px)/1 var(--f-display); letter-spacing: .16em; text-transform: uppercase; text-decoration: none; color: #fff;
+  padding: 1.05em 2em 1em 2.15em; border-radius: 999px;
   background:
-    radial-gradient(120% 140% at 50% -20%, rgba(255,255,255,.22) 0%, rgba(255,255,255,0) 45%),
-    linear-gradient(180deg, #2c2c31 0%, #141417 46%, #060607 54%, #18181b 100%);
+    radial-gradient(120% 90% at 50% -10%, rgba(120,150,255,.45), rgba(120,150,255,0) 55%),
+    linear-gradient(90deg, #030c3d 0%, #0a2297 50%, #030c3d 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.38),
-    inset 0 -3px 6px rgba(0,0,0,.65),
-    inset 0 0 0 1px rgba(255,255,255,.06),
-    0 6px 0 #000,
-    0 7px 0 rgba(0,0,0,.35),
-    0 16px 22px -6px rgba(90,0,18,.65),
-    0 28px 48px -10px rgba(90,0,18,.45);
-  opacity: 0; transform: translateY(10px) scale(.86); transform-origin: 100% 50%;
-  transition: opacity 300ms cubic-bezier(.16,1,.3,1), transform 300ms cubic-bezier(.16,1,.3,1), box-shadow 150ms ease-out;
-  will-change: transform, opacity;
-  -webkit-tap-highlight-color: transparent;
+    inset 0 1px 0 rgba(170,195,255,.55), inset 0 -2px 6px rgba(0,0,0,.45),
+    0 0 0 1px rgba(5,15,70,.9), 0 6px 16px -4px rgba(4,14,80,.7), 0 0 26px -6px rgba(60,100,255,.55);
+  text-shadow: 0 0 10px rgba(140,170,255,.55);
+  opacity: 0; transform: translate(calc(8px + var(--mx)), var(--my)) scale(.9);
+  transition: opacity 250ms ease-out, transform 300ms cubic-bezier(.16,1,.3,1), box-shadow 200ms ease-out;
+  -webkit-tap-highlight-color: transparent; outline: none;
 }
-/* glossy highlight across the top half */
-.cta::before {
-  content: ""; position: absolute; left: 8%; right: 8%; top: 5%; height: 44%; border-radius: 999px; pointer-events: none;
-  background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.04));
+/* the thin inner rim that gives it the glassy edge */
+.tap::before {
+  content: ""; position: absolute; inset: 3px; border-radius: inherit; z-index: -1; pointer-events: none;
+  border: 1px solid rgba(160,185,255,.38);
+  background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0) 45%);
 }
-.cta .dot { width: .55em; height: .55em; border-radius: 50%; flex: none; background: #ff3b5c; box-shadow: 0 0 0 3px rgba(255,59,92,.25), 0 0 12px rgba(255,59,92,.9); }
-.cta.show { opacity: 1; transform: translateY(0) scale(1); }
-.cta.show:hover { transform: translateY(-2px) scale(1.02); }
-.cta.show:active {
-  transform: translateY(5px) scale(.99);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 -2px 4px rgba(0,0,0,.6), 0 1px 0 #000, 0 8px 14px -6px rgba(90,0,18,.6);
+.tap.show { opacity: 1; transform: translate(var(--mx), var(--my)) scale(1); }
+.tap.show:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(190,210,255,.7), inset 0 -2px 6px rgba(0,0,0,.45),
+    0 0 0 1px rgba(5,15,70,.9), 0 8px 20px -4px rgba(4,14,80,.75), 0 0 34px -4px rgba(80,120,255,.8);
 }
-.cta:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; }
+.tap.show:active { transform: translate(var(--mx), calc(1px + var(--my))) scale(.97); }
+.tap:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .cta { transition: opacity 100ms linear; transform: none; }
-  .cta.show, .cta.show:hover, .cta.show:active { transform: none; }
+  .fan-label .go { transition: none; }
+  .tap { transition: opacity 100ms linear; }
+  .mini { transition: opacity 100ms linear; }
+  .fan.show:hover .mini, .fan.show:focus-visible .mini { transform: var(--rest); }
 }
 </style>
 </head>
@@ -102,23 +156,62 @@ body {
 </header>
 
 <div class="stage" id="stage">
-  <video id="bunny" muted playsinline preload="auto" aria-hidden="true">
-    <source src="media/bunny.mp4" type="video/mp4">
-    <source src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/cloudinarry%20to%20cloudflare/202606021731-e_hqa6sn.mp4" type="video/mp4">
-  </video>
-  <a class="cta" id="cta" href="/projects/"><span class="dot" aria-hidden="true"></span><span>Explore projects in progress</span></a>
+  <video id="bunny" class="layer" muted playsinline preload="auto" aria-hidden="true" src="media/bunny.mp4"></video>
+
+  <div class="head-rig" id="rig" aria-hidden="true">
+    <img class="plate" src="media/plate.webp" alt="">
+    <div class="head" id="head">
+      <img src="media/head.webp" alt="">
+      <span class="lens" id="lensL"><i></i></span>
+      <span class="lens" id="lensR"><i></i></span>
+    </div>
+  </div>
+
+  <a class="tap" id="tap" href="https://cotador.emberpieretti.com">Elton, clique aqui</a>
+
+  <a class="fan v-edit" id="fan" href="/projects/" aria-label="Acompanhe o que estou construindo">
+    <span class="fan-cards" id="cards"></span>
+    <span class="fan-label"><span class="txt"><em>7 projetos em andamento</em>Acompanhe o que<br>estou construindo</span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg></span></span>
+  </a>
 </div>
 
 <script>
 (() => {
   'use strict';
   const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const stage = document.getElementById('stage'), v = document.getElementById('bunny'), cta = document.getElementById('cta');
+  const $ = (id) => document.getElementById(id);
+  const stage = $('stage'), v = $('bunny'), fan = $('fan'), tap = $('tap'), cards = $('cards'), rig = $('rig'), head = $('head');
   const VW = 1920, VH = 1080;
-  /* measured on the final frame: the fingertip, and the height of the pointing line */
-  const TIP = { x: 1113 / VW, y: 464 / VH };
-  const REVEAL_AT = 2.5;          /* seconds: the arm has reached its pointing pose */
-  let shown = false, box = { x: 0, y: 0, w: 1, h: 1 };
+  const TIP = { x: 1113, y: 464 };                 /* fingertip on the final frame */
+  const HEAD = { x: 1300, y: 20, w: 340, h: 458 };   /* cut-out box on the final frame */
+  const LENS = [{ x: 38, y: 310, w: 92, h: 62 }, { x: 152, y: 310, w: 90, h: 64 }];  /* inside the head box */
+  const REVEAL_AT = 2.5;
+
+  /* the same projects, in the same order, as the fan on the projects page */
+  const THUMBS = ['big-dream-events', 'big-dream-link-in-bio', 'soletrando', 'my-website', 'building-ai-agents', 'financial-dashboard', 'faceless-youtube-channel'];
+  const C = THUMBS.length >> 1;
+  THUMBS.forEach((name, i) => {
+    const el = document.createElement('span');
+    el.className = 'mini' + (i === C ? ' c' : '');
+    el.innerHTML = '<img src="media/thumbs/' + name + '.webp" alt="" loading="eager">';
+    const t = i - C, a = Math.abs(t);
+    el.style.zIndex = String(10 - a);
+    el.dataset.t = t;
+    el.style.transitionDelay = (REDUCE ? 0 : (a * 55 + (t < 0 ? 25 : 0))) + 'ms, 0ms, 0ms';
+    cards.appendChild(el);
+  });
+
+  /* rest and hover poses; the hover pose opens toward the left so it never covers the hand */
+  function setPoses(step) {
+    const openStep = step * 1.45, shift = -C * (openStep - step);
+    cards.querySelectorAll('.mini').forEach((el) => {
+      const t = +el.dataset.t, a = Math.abs(t);
+      el.style.setProperty('--rest', 'translate(calc(var(--cw) * ' + (t * step) + '), calc(var(--ch) * ' + (a * a * 0.035) + ')) rotate(' + (t * 8) + 'deg) scale(' + (1 - a * 0.05) + ')');
+      el.style.setProperty('--open', 'translate(calc(var(--cw) * ' + (t * openStep + shift) + '), calc(var(--ch) * ' + (a * a * 0.045 - (a === 0 ? 0.08 : 0)) + ')) rotate(' + (t * 11) + 'deg) scale(' + (1 - a * 0.04 + (a === 0 ? 0.06 : 0)) + ')');
+    });
+  }
+  let box = { x: 0, y: 0, w: 1, h: 1, s: 1 }, step = 0.42;
+  const P = (vx, vy) => ({ x: box.x + vx * box.s, y: box.y + vy * box.s });
 
   function layout() {
     const W = innerWidth, H = innerHeight;
@@ -126,59 +219,150 @@ body {
     stage.classList.toggle('narrow', narrow);
     let w, h, x, y;
     if (!narrow) {
-      /* cover the screen, centred */
       const s = Math.max(W / VW, H / VH); w = VW * s; h = VH * s; x = (W - w) / 2; y = (H - h) / 2;
     } else {
-      /* show the part of the frame from just left of the target to past the bunny (30% to 92%) */
-      const L = 0.3, F = 0.62;
-      w = W / F; h = w * VH / VW; x = -L * w; y = Math.max(56, (H - h) * 0.42);
+      const L = 0.12, F = 0.8;   /* show the frame from left of the target to past the bunny */
+      w = W / F; h = w * VH / VW; x = -L * w; y = Math.max(64, (H - h) * 0.16);
     }
-    box = { x, y, w, h };
-    /* narrow screens: continue the video's lit floor below it so there is no seam */
+    box = { x, y, w, h, s: w / VW };
+    step = narrow ? 0.3 : 0.42;
+    setPoses(step);
     document.body.style.background = narrow
       ? 'linear-gradient(180deg, #e2183d 0px, #e2183d ' + Math.round(y + h * 0.55) + 'px, #f24b6e ' + Math.round(y + h * 0.97) + 'px, #e63a5d ' + H + 'px)'
       : '';
     Object.assign(v.style, { width: w + 'px', height: h + 'px', left: x + 'px', top: y + 'px' });
-    placeButton();
+    const hp = P(HEAD.x, HEAD.y);
+    Object.assign(rig.style, { left: hp.x + 'px', top: hp.y + 'px', width: HEAD.w * box.s + 'px', height: HEAD.h * box.s + 'px' });
+    ['lensL', 'lensR'].forEach((id, i) => {
+      const L = LENS[i], el = $(id);
+      Object.assign(el.style, { left: (L.x / HEAD.w * 100) + '%', top: (L.y / HEAD.h * 100) + '%', width: (L.w / HEAD.w * 100) + '%', height: (L.h / HEAD.h * 100) + '%' });
+    });
+    placeFan();
   }
 
-  function placeButton() {
-    const W = innerWidth;
-    const tipX = box.x + TIP.x * box.w, tipY = box.y + TIP.y * box.h;
-    const gap = Math.max(14, box.w * 0.012);
-    const gutter = 16;
-    /* the button sits on the line the finger points along, its right edge just short of the fingertip */
-    const maxW = Math.max(150, tipX - gap - gutter);
-    cta.style.maxWidth = maxW + 'px';
-    const bw = cta.offsetWidth, bh = cta.offsetHeight;
-    let left = tipX - gap - bw;
-    left = Math.max(gutter, Math.min(left, W - gutter - bw));
-    cta.style.left = left + 'px';
-    cta.style.top = (tipY - bh / 2) + 'px';
+  function placeFan() {
+    const W = innerWidth, H = innerHeight, narrow = stage.classList.contains('narrow');
+    const tip = P(TIP.x, TIP.y), gutter = 16;
+
+    /* 1. the yellow button sits right on the fingertip */
+    tap.style.setProperty('--tf', Math.max(11, Math.min(14, box.w * 0.0072)) + 'px');
+    tap.style.maxWidth = '';
+    const tw = tap.offsetWidth, th = tap.offsetHeight;
+    const tapLeft = Math.max(gutter, tip.x + 2 - tw);
+    tap.style.left = tapLeft + 'px';
+    tap.style.top = (tip.y - th / 2) + 'px';
+
+    /* 2. the card fan: left of the button on wide screens, under the scene on narrow ones */
+    let ch, cw, cx, top;
+    const spreadOf = (w) => w * (1 + 2 * C * step) + w * 0.6;
+    if (!narrow) {
+      ch = box.h * 0.215; cw = ch * 4 / 7;
+      const room = tapLeft - Math.max(14, box.w * 0.02) - gutter;
+      if (spreadOf(cw) > room) { const k = room / spreadOf(cw); ch *= k; cw *= k; }
+      cx = tapLeft - Math.max(14, box.w * 0.02) - spreadOf(cw) / 2;
+      top = tip.y - ch * 0.62;
+    } else {
+      const below = box.y + box.h + 6;
+      const free = H - below - 90 - gutter;
+      ch = Math.min(free, W * 0.42); cw = ch * 4 / 7;
+      const room = W - gutter * 2;
+      if (spreadOf(cw) > room) { const k = room / spreadOf(cw); ch *= k; cw *= k; }
+      cx = W / 2; top = below + ch * 0.05;
+    }
+    fan.style.setProperty('--cw', cw + 'px');
+    fan.style.setProperty('--ch', ch + 'px');
+    fan.style.setProperty('--lt', narrow ? '1.42' : '1.4');
+    fan.style.setProperty('--lf', Math.max(12, Math.min(16, cw * (narrow ? 0.12 : 0.15))) + 'px');
+    fan.style.left = cx + 'px';
+    fan.style.top = top + 'px';
+    fan.style.width = '0px';
+    cards.style.height = ch + 'px';
+
+    /* 3. keep the label on screen: it may wrap on narrow screens */
+    const label = fan.querySelector('.fan-label');
+    const maxL = W - gutter * 2;
+    label.style.whiteSpace = 'nowrap'; label.style.maxWidth = '';
+    let lw = label.offsetWidth;
+    if (lw > maxL) { label.style.whiteSpace = 'normal'; label.style.maxWidth = maxL + 'px'; lw = label.offsetWidth; }
+    const centre = Math.max(gutter + lw / 2, Math.min(cx, W - gutter - lw / 2));
+    label.style.left = (centre - cx) + 'px';
   }
 
-  function reveal() { if (shown) return; shown = true; placeButton(); cta.classList.add('show'); }
-  function toEnd() { try { v.currentTime = Math.max(0, (v.duration || 4) - 0.05); } catch (e) {} v.pause(); reveal(); }
+  /* ---------- reveal ---------- */
+  let shown = false;
+  function reveal() { if (shown) return; shown = true; placeFan(); tap.classList.add('show'); setTimeout(() => fan.classList.add('show'), REDUCE ? 0 : 250); }
+  function watch() { if (shown) return; if (v.currentTime >= REVEAL_AT) reveal(); else requestAnimationFrame(watch); }
 
-  function watch() {
-    if (shown) return;
-    if (v.currentTime >= REVEAL_AT) reveal(); else requestAnimationFrame(watch);
+  /* ---------- head follows the cursor ---------- */
+  let live = false, target = { x: 0, y: 0 }, cur = { x: 0, y: 0 }, hasPointer = false, raf = 0;
+  function goLive() {
+    if (live) return; live = true;
+    rig.classList.add('on');
+    if (!REDUCE) raf = requestAnimationFrame(tick);
+  }
+  function aim(cx, cy) {
+    const hc = P(HEAD.x + HEAD.w * 0.5, HEAD.y + HEAD.h * 0.62);
+    target.x = Math.max(-1, Math.min(1, (cx - hc.x) / (innerWidth * 0.35)));
+    target.y = Math.max(-1, Math.min(1, (cy - hc.y) / (innerHeight * 0.4)));
+  }
+  function tick() {
+    raf = requestAnimationFrame(tick);
+    if (!hasPointer) {                  /* no mouse yet: glance toward the fan */
+      const f = fan.getBoundingClientRect();
+      aim(f.left + f.width / 2, f.top + f.height / 2 - 20);
+    }
+    cur.x += (target.x - cur.x) * 0.12;
+    cur.y += (target.y - cur.y) * 0.12;
+    const yaw = cur.x * 18, pitch = -cur.y * 12, roll = cur.x * 6;
+    head.style.transform = 'perspective(' + (900 * box.s) + 'px) translate(' + (cur.x * 14 * box.s) + 'px,' + (cur.y * 9 * box.s) + 'px) rotateY(' + yaw + 'deg) rotateX(' + pitch + 'deg) rotate(' + roll + 'deg)';
+    const gl = 'translateX(' + (cur.x * -70) + '%) skewX(-18deg)';
+    $('lensL').firstChild.style.transform = gl;
+    $('lensR').firstChild.style.transform = gl;
+  }
+  addEventListener('pointermove', (e) => { hasPointer = e.pointerType === 'mouse' || hasPointer; aim(e.clientX, e.clientY); }, { passive: true });
+  addEventListener('pointerdown', (e) => { hasPointer = true; aim(e.clientX, e.clientY); }, { passive: true });
+  document.addEventListener('visibilitychange', () => { if (!live || REDUCE) return; if (document.hidden) { cancelAnimationFrame(raf); raf = 0; } else if (!raf) raf = requestAnimationFrame(tick); });
+
+  /* ---------- magnetic buttons: they lean toward a nearby cursor ---------- */
+  const label = fan.querySelector('.fan-label');
+  function magnet(el, x, y, reach, pull) {
+    const r = el.getBoundingClientRect();
+    const dx = x - (r.left + r.width / 2), dy = y - (r.top + r.height / 2);
+    const d = Math.hypot(dx / (r.width / 2 + reach), dy / (r.height / 2 + reach));
+    const k = d < 1 ? (1 - d) : 0;
+    el.style.setProperty('--mx', (dx * pull * k).toFixed(1) + 'px');
+    el.style.setProperty('--my', (dy * pull * k).toFixed(1) + 'px');
+  }
+  if (!REDUCE && matchMedia('(pointer: fine)').matches) {
+    addEventListener('pointermove', (e) => { magnet(label, e.clientX, e.clientY, 90, 0.18); magnet(tap, e.clientX, e.clientY, 60, 0.3); }, { passive: true });
   }
 
-  layout();
-  addEventListener('resize', layout);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeButton);
-
+  /* ---------- boot ---------- */
+  function toEnd() {
+    v.pause();
+    const end = Math.max(0, (v.duration || 4) - 0.02);
+    const done = () => { reveal(); goLive(); };
+    if (Math.abs(v.currentTime - end) < 0.05) done();
+    else { v.addEventListener('seeked', done, { once: true }); try { v.currentTime = end; } catch (e) { done(); } }
+  }
   function start() {
     if (REDUCE) { toEnd(); return; }
     const p = v.play();
-    if (p && p.catch) p.catch(toEnd);       /* autoplay refused (e.g. low power mode): show the final pose */
+    if (p && p.catch) p.catch(toEnd);      /* autoplay refused (e.g. low power mode): show the final pose */
     requestAnimationFrame(watch);
   }
+  layout();
+  addEventListener('resize', layout);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeFan);
   if (v.readyState >= 1) start(); else v.addEventListener('loadedmetadata', start, { once: true });
-  v.addEventListener('timeupdate', () => { if (v.currentTime >= REVEAL_AT) reveal(); });
-  v.addEventListener('ended', reveal);
-  /* if the video cannot load at all, still show the way in */
+  v.addEventListener('timeupdate', () => {
+    if (v.currentTime >= REVEAL_AT) reveal();
+    if (v.duration && v.currentTime >= v.duration - 0.08) { reveal(); goLive(); }
+  });
+  v.addEventListener('pause', () => { if (v.duration && v.currentTime >= v.duration - 0.25) goLive(); });
+  /* if playback stalls (background tab, data saver), jump to the final pose after a while */
+  setTimeout(() => { if (!live) toEnd(); }, 6500);
+  v.addEventListener('ended', () => { reveal(); goLive(); });
   setTimeout(() => { if (!shown && (v.readyState < 2 || v.error)) reveal(); }, 4500);
 })();
 </script>

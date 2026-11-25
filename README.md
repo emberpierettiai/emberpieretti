@@ -1,10 +1,9 @@
 # emberpieretti.com
 
-Personal site of Emberson Pieretti. Static files only, no build step. Everything is in English.
+Personal site of Emberson Pieretti. Static files only, no build step.
 
 ## Pages
-- `/` (`index.html`): home. A 3D bunny video plays once, walks in and points; a glossy 3D button
-  "Explore projects in progress" appears where he points and links to `/projects/`.
+- `/` (`index.html`): home with the bunny, the Elton button and the mini card fan.
 - `/projects/` (`projects/index.html`): the card-fan carousel, one card per project.
 
 ## Hosting
@@ -15,19 +14,20 @@ Personal site of Emberson Pieretti. Static files only, no build step. Everything
 ## Structure
 ```
 index.html              home (HTML, CSS, JS in one file)
-media/                  optional: put bunny.mp4 here to self-host the video (see below)
+media/                  bunny video, head cut-out layers, card thumbnails
 projects/index.html     projects page
 projects/img/           project screenshots for the cards (640 x 1120 px)
 netlify.toml            no build, publish the root folder
 ```
 
 ## Home details
-- The video tries `media/bunny.mp4` first, then falls back to the original hosted file on
-  pub-86dc5b5484314368ac5436a674b0d919.r2.dev. To self-host, save the mp4 as `media/bunny.mp4`.
-- The button position comes from the fingertip measured on the last frame (1113, 464 in a 1920 x 1080 frame)
-  and is recalculated on resize. It appears at 2.5 s, when the arm reaches the pointing pose.
-- Narrow screens show the slice of the frame from the target to the bunny, faded into the page colour.
-- Reduced motion or blocked autoplay: jumps to the final pointing frame and shows the button at once.
+- `media/bunny.mp4` plays once: the bunny walks in and points. It is hosted here (no third-party link).
+- At the fingertip: a glossy navy "Elton, clique aqui" button linking to https://cotador.emberpieretti.com.
+- Left of it (below it on phones): a miniature of the projects card fan (`media/thumbs/`) with the line
+  "Acompanhe o que estou construindo" and a round arrow; it links to `/projects/`.
+- After the video ends, the head is swapped for a cut-out (`media/head.webp` over the clean patch `media/plate.webp`)
+  that turns toward the cursor. Fingertip measured at (1113, 464) on the 1920 x 1080 final frame.
+- Reduced motion or blocked autoplay: jumps to the final frame and shows everything at once.
 
 ## Projects details
 - React 18.3.1 (UMD, cdnjs) and GSAP 3.15.0 (jsDelivr). Fonts: Bricolage Grotesque, Instrument Sans.
